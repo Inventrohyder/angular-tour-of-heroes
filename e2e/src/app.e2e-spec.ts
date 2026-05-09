@@ -1,23 +1,34 @@
-import { AppPage } from './app.po';
-import { browser, logging } from 'protractor';
+import { expect, test } from '@playwright/test';
 
-describe('workspace-project App', () => {
-  let page: AppPage;
+test.describe('Tour of Heroes', () => {
+  test('renders the shell and navigates through the hero views', async ({ page }) => {
+    const browserErrors: string[] = [];
 
-  beforeEach(() => {
-    page = new AppPage();
-  });
+    page.on('console', message => {
+      if (message.type() === 'error') {
+        browserErrors.push(message.text());
+      }
+    });
+    page.on('pageerror', error => browserErrors.push(error.message));
 
-  it('should display welcome message', () => {
-    page.navigateTo();
-    expect(page.getTitleText()).toEqual('angular-tour-of-heroes app is running!');
-  });
+    await page.goto('/');
 
-  afterEach(async () => {
-    // Assert that there are no errors emitted from the browser
-    const logs = await browser.manage().logs().get(logging.Type.BROWSER);
-    expect(logs).not.toContain(jasmine.objectContaining({
-      level: logging.Level.SEVERE,
-    } as logging.Entry));
+    await expect(page.getByRole('heading', { name: 'Tour of Heroes' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Heroes' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole('heading', { name: 'Top Heroes' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Narco' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Magneta' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Heroes' }).click();
+    await expect(page).toHaveURL(/\/heroes$/);
+    await expect(page.getByRole('heading', { name: 'My Heroes' })).toBeVisible();
+    await expect(page.locator('.heroes')).toContainText('Dr Nice');
+    await expect(page.locator('.heroes')).toContainText('Narco');
+
+    expect(browserErrors).toEqual([]);
   });
 });
